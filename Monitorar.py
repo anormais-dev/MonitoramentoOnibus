@@ -1,4 +1,5 @@
 import cv2
+import os
 from ultralytics import YOLO
 from datetime import datetime, timedelta
 import time
@@ -8,6 +9,9 @@ model = YOLO("yolov8n.pt")
 
 # Dados da câmera
 rtspUrl = 'rtsp://admin:peinha3200@192.168.1.10:554/'
+
+# Garante que a pasta "prova" exista
+os.makedirs("prova", exist_ok=True)
 
 # Função para abrir a câmera com tentativa
 def abrirCamera():
@@ -55,10 +59,13 @@ while True:
 
     agora = datetime.now()
     if onibusDetectado and (agora - ultimaDeteccao).total_seconds() > 10:
-        print(f"🚌 Ônibus detectado às {agora.strftime('%Y-%m-%d %H:%M:%S')}")
+        timestamp = agora.strftime('%Y-%m-%d_%H-%M-%S')
+        filename = f"prova/onibus_{timestamp}.jpg"
+        cv2.imwrite(filename, frame)
+        print(f"🚌 Ônibus detectado às {agora.strftime('%Y-%m-%d %H:%M:%S')} - imagem salva em {filename}")
         ultimaDeteccao = agora
 
-    # Comente a linha abaixo se estiver rodando em servidor sem GUI
+    # Mostrar imagem ao vivo (remova se rodar sem GUI)
     cv2.imshow("Camera", frame)
     if cv2.waitKey(1) == 27:
         break

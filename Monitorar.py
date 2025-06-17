@@ -3,12 +3,14 @@ import os
 from ultralytics import YOLO
 from datetime import datetime, timedelta
 import time
+from dotenv import load_dotenv
+load_dotenv()
 
 # Carrega o modelo
 model = YOLO("yolov8n.pt")
 
 # Dados da câmera
-rtspUrl = 'rtsp://admin:peinha3200@192.168.1.10:554/'
+rtspUrl = os.getenv("RTSP_URL")
 
 # Garante que a pasta "prova" exista
 os.makedirs("prova", exist_ok=True)

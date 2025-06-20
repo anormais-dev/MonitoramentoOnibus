@@ -52,7 +52,7 @@ while True:
         cls = int(box.cls[0])
         conf = float(box.conf[0])
 
-        if cls == 5 and conf > 0.5:
+        if cls == 5 and conf > 0.9:
             onibusDetectado = True
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)

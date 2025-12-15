@@ -155,14 +155,14 @@ def classify_single(image_arg):
     if base_dir is None:
         print("[ERROR] Could not find dataset. Expected folders like dataset/correct and dataset/false or dataset/training/...")
         print("Looked for:", CANDIDATE_DATASET_DIRS)
-        return
+        return None
     print("[INFO] dataset base:", base_dir)
     print("[INFO] class dirs:", class_dirs)
 
     pairs = list_dataset_images(base_dir, class_dirs)
     if not pairs:
         print("[ERROR] No images found inside class dirs. Check that there are image files with extensions jpg/png/jpeg.")
-        return
+        return None
     print(f"[INFO] found {len(pairs)} reference images (example): {pairs[:3]}")
 
     # prepare embedder and index
@@ -170,7 +170,6 @@ def classify_single(image_arg):
     idx, meta = load_cached_index()
     if idx is None:
         idx, meta = build_index(pairs, embedder)
-        # if not faiss, idx is (embs, None) and meta is list
         if not _HAS_FAISS:
             emb_array = idx[0]
         else:
@@ -183,7 +182,7 @@ def classify_single(image_arg):
     if resolved is None:
         print("[ERROR] Could not open image argument:", image_arg)
         print("Tried extensions:", TRY_EXTS)
-        return
+        return None
     print("[INFO] using input image:", resolved)
 
     pil = Image.open(resolved).convert("RGB")
@@ -198,7 +197,7 @@ def classify_single(image_arg):
     else:
         if emb_array is None:
             print("[ERROR] No embeddings available for brute force.")
-            return
+            return None
         sims = np.dot(emb_array, emb[0])
         ids = np.argsort(-sims)[:TOP_K].tolist()
         chosen, counts = majority_vote(meta, ids)
@@ -212,6 +211,13 @@ def classify_single(image_arg):
     for pth, lbl, sc in top:
         print(f"  {lbl:6s}  {sc:.4f}  {os.path.basename(pth)}")
     print("------------------")
+
+    # IMPORTANT: return structured result so callers can use it programmatically
+    return {
+        "predicted": chosen,
+        "votes": counts,
+        "matches": top
+    }
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

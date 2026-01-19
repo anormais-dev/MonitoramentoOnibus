@@ -1,11 +1,13 @@
+# arquivo para croppar imagens
+
 import os
 import cv2
 from ultralytics import YOLO
 
 # INPUT_DIR = "dataset/training/false"    # onde estão suas imagens originais
 # OUTPUT_DIR = "dataset/training/false_cropped"     # crops para treinar
-INPUT_DIR = "detections/correct"    # onde estão suas imagens originais
-OUTPUT_DIR = "detections/correct_cropped"     # crops para treinar
+INPUT_DIR = "classified"    # onde estão suas imagens originais
+OUTPUT_DIR = "classified/false_cropped"     # crops para treinar
 YOLO_MODEL = "yolov8n.pt"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

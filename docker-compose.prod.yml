@@ -1,0 +1,51 @@
+services:
+  bus-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: bus-monitor-prod
+    restart: always
+    
+    volumes:
+      - ./classified:/app/classified
+      - ./detections:/app/detections
+      - ./.env:/app/.env:ro
+      - model-cache:/root/.cache
+    
+    env_file:
+      - .env
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        reservations:
+          cpus: '1'
+          memory: 2G
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        labels: "service=bus-monitor"
+
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import cv2; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  model-cache:
+    driver: local

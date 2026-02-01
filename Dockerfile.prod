@@ -1,0 +1,59 @@
+FROM python:3.11-slim as builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /build/wheels -r requirements.txt
+
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-minimal \
+    python3-pip \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/wheels /wheels
+
+RUN pip install --no-cache /wheels/*
+
+COPY camera_config.py .
+COPY identifier.py .
+COPY single_image_classifier.py .
+COPY training_identifier.py .
+COPY crops.py .
+COPY .env.example .env
+
+COPY yolov8n.pt .
+COPY bus_classifier_resnet18.pth .
+COPY dataset_index.faiss .
+COPY dataset_meta.npy .
+COPY renders_index.faiss .
+COPY renders_meta.npy .
+
+RUN mkdir -p detections classified/{correct,false,unknown}
+
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import torch; print('OK')" || exit 1
+
+CMD ["python3", "identifier.py"]
